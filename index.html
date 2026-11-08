@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>The Cat Office</title>
+<style>
+:root{--bg:#F4F6F4;--panel:#FFFFFF;--panel2:#ECF0EE;--text:#1F2628;--muted:#5F6B6C;--line:#D5DCDA;--accent:#2F7F7A;--accent-bg:#DCEDEA;--ok:#4F8A2B;--warn:#B8741A;--rest:#3E74A8}
+@media (prefers-color-scheme:dark){:root{--bg:#141A1B;--panel:#1C2425;--panel2:#243032;--text:#E6ECEA;--muted:#9DAAAA;--line:#33403F;--accent:#6CC4BC;--accent-bg:#1F3533;--ok:#8CC861;--warn:#E8A04E;--rest:#7FAEDD}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:26px;line-height:1.2;font-weight:650;letter-spacing:-.01em;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 14px;max-width:64ch}
+h2{font-size:15px;font-weight:600;margin:0 0 2px}
+.muted{color:var(--muted)}
+button,input,select{font:inherit;color:inherit}
+.btn{font-size:13px;padding:6px 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.on{border-color:var(--accent);background:var(--accent-bg);color:var(--accent)}
+.btn:focus-visible,.sr:focus-visible,#sptog:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#bar,#tasks,.tools{display:flex;flex-wrap:wrap;gap:6px}
+#bar{margin:0 0 10px}
+#stage{position:relative;width:100%;height:clamp(340px,62vh,520px);border-radius:14px;overflow:hidden;touch-action:none;cursor:grab;background:#2A2320}
+#sp{position:absolute;left:10px;right:10px;top:10px;display:flex;flex-direction:column;background:rgba(30,24,20,.86);color:#F2E9DA;border-radius:12px;font-size:12px;z-index:5;backdrop-filter:blur(4px)}
+#sptog{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:7px 10px;background:none;border:0;cursor:pointer;font-size:12px;font-weight:600;text-align:left;color:inherit}
+#spcount{font-weight:400;color:#C9BDA8}
+#splist{display:flex;flex-wrap:wrap;gap:4px;padding:0 6px 7px}
+#sp.shut #splist{display:none}
+.sr{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;background:rgba(255,255,255,.08);border:0;border-radius:999px;cursor:pointer;font-size:12px;color:inherit;white-space:nowrap}
+.sr:hover{background:rgba(255,255,255,.18)}
+.sr .dot{width:9px;height:9px;border-radius:50%;flex:none;background:#B3A793}
+.sr .st{color:#C9BDA8}
+#card{position:absolute;display:none;left:0;top:0;transform:translate(-50%,-100%);width:252px;background:rgba(30,24,20,.95);color:#F2E9DA;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.4;z-index:6;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+#card .ch{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+#card .mut{color:#C9BDA8}
+#cClose{background:none;border:0;color:#F2E9DA;cursor:pointer;font-size:18px;line-height:1;padding:0 2px}
+#cBarWrap{display:flex;align-items:center;gap:8px;margin:6px 0 2px}
+.bar{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.18);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:4px;background:#6CC4BC;transition:width .3s}
+#card .ca{display:flex;gap:6px;margin-top:8px}
+#card .ca button{font-size:12px;padding:4px 9px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:rgba(255,255,255,.08);color:#F2E9DA;cursor:pointer}
+#card .ca button:hover{background:rgba(255,255,255,.18)}
+.metaRow{display:flex;gap:12px;align-items:center;margin-top:8px;flex-wrap:wrap}
+#cap{flex:1;min-width:200px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel)}
+.panel p.note{font-size:12px;color:var(--muted);margin:2px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 46px 46px 78px;gap:6px;padding:4px 6px;font-size:13px;border-radius:6px}
+.grid.hd{color:var(--muted);font-weight:600}
+.grid.win{background:var(--accent-bg);color:var(--accent)}
+.grid span+span{text-align:right}
+.lr{display:grid;grid-template-columns:70px 1fr 120px;gap:8px;align-items:center;font-size:13px;margin-top:6px}
+.lr .t{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden}
+.lr .t i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.lr .s{color:var(--muted);text-align:right;font-size:12px}
+#hist{margin:8px 0 0;padding:0;list-style:none;font-size:12px;color:var(--muted)}
+#log{height:210px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--panel2);margin:8px 0}
+.m{margin:0 0 8px;white-space:pre-wrap}
+.m b{font-weight:600}
+.m.note{color:var(--muted);font-style:italic}
+input[type=text],input[type=password],select{padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);min-width:0}
+.tools{align-items:center}
+.send{display:flex;gap:6px}
+.send input{flex:1}
+details{margin-top:10px;font-size:13px}
+summary{cursor:pointer;color:var(--muted)}
+details label{display:block;margin:8px 0 2px;font-size:12px;color:var(--muted)}
+details input{width:100%}
+.foot{color:var(--muted);font-size:12px;margin-top:16px;max-width:70ch}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.bar i,.lr .t i,#toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>The Cat Office</h1>
+<p class="sub">A cozy 3D office run by cats. Click a room or a cat, ask Kaito to hand out tasks, and talk to the team through Claude.</p>
+<div id="bar">
+<button class="btn" data-r="all">Overview</button>
+<button class="btn" data-r="work">Work floor</button>
+<button class="btn" data-r="dir">Director’s office</button>
+<button class="btn" data-r="it">IT corner</button>
+<button class="btn" data-r="hr">HR room</button>
+<button class="btn" data-r="mgr">Manager’s office</button>
+<button class="btn" data-r="brk">Break lounge</button>
+<button class="btn" id="tour">Start tour</button>
+<button class="btn" id="callbot">Call Mittens</button>
+</div>
+<div id="stage">
+<div id="sp"><button id="sptog" aria-expanded="true"><span>Who’s available</span><span id="spcount"></span></button><div id="splist"></div></div>
+<div id="card" role="dialog" aria-label="Cat status">
+<div class="ch"><div><strong id="cName"></strong> <span id="cRole" class="mut"></span></div><button id="cClose" aria-label="Close card">×</button></div>
+<div id="cStat"></div>
+<div id="cBarWrap"><div class="bar"><i id="cBar"></i></div><span id="cLoad"></span></div>
+<div id="cMeta" class="mut"></div>
+<div id="cQuirk" style="margin-top:4px"></div>
+<div class="ca"><button id="cChat">Chat</button><button id="cCopy">Copy prompt</button></div>
+</div>
+</div>
+<div class="metaRow">
+<div id="cap">Drag to rotate, scroll to zoom, double-click to reset. Click a room or a cat.</div>
+<label class="muted">Brightness <input type="range" id="bright" min="40" max="220" value="100" style="width:120px;vertical-align:middle"></label>
+</div>
+<div class="cols">
+<section class="panel" id="desk">
+<h2>Kaito’s task desk</h2>
+<p class="note">Kaito scores each available cat with one plain rule: skill × 10 − current workload. Cats at 70 or more rest in the lounge, and tasks nobody can take go to Duke.</p>
+<div id="tasks"></div>
+<div id="result" style="margin-top:10px"></div>
+<ul id="hist"></ul>
+<div id="loads" style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"></div>
+</section>
+<section class="panel" id="chat">
+<h2>Talk to Claude</h2>
+<p class="note">Pick a cat or the whole office. Each reply uses the live status from the scene.</p>
+<div class="tools">
+<select id="who" aria-label="Who to talk to"></select>
+<button class="btn" id="brief">Office briefing</button>
+<button class="btn" id="copyp">Copy prompt</button>
+</div>
+<div id="log" aria-live="polite"></div>
+<div class="send"><input type="text" id="msg" placeholder="Say something to the cat" aria-label="Message"><button class="btn" id="send">Send</button></div>
+<details id="settings"><summary>Connection settings</summary>
+<label for="key">Anthropic API key (stays in this browser)</label>
+<input type="password" id="key" autocomplete="off" placeholder="sk-ant-...">
+<label for="model">Model</label>
+<input type="text" id="model" placeholder="claude-sonnet-5-5">
+<label for="proxy">Proxy URL (optional, replaces the key)</label>
+<input type="text" id="proxy" placeholder="https://your-worker.example.workers.dev">
+<p class="note" style="margin-top:8px">Without a key or proxy, use Copy prompt and paste it into Claude. Never share a page that has your key saved.</p>
+</details>
+</section>
+</div>
+<p class="foot">Task assignment uses simple scoring rules with no AI. Only the chat panel calls Claude, and only when you send a message.</p>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const cap=$('cap');
+function ensureThree(cb){
+  if(window.THREE)return cb();
+  const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';
+  s.onload=cb;
+  s.onerror=()=>{cap.textContent='Could not load the 3D library. Check your connection and reload.';};
+  document.head.appendChild(s);
+}
+ensureThree(function(){try{boot();}catch(err){cap.textContent='The scene hit an error: '+err.message;console.error(err);}});
+
+function boot(){
+const stage=$('stage'),card=$('card');
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const cv=renderer.domElement;cv.style.cssText='display:block;width:100%;height:100%';
+stage.insertBefore(cv,stage.firstChild);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(42,1.5,0.1,200);
+let bright=1;const lights=[];
+function addLight(l,base){l.intensity=base*bright;scene.add(l);lights.push({l,base});return l;}
+addLight(new THREE.AmbientLight(0xffdcb8),.7);
+addLight(new THREE.HemisphereLight(0xffe6c8,0x3a2a22),.35);
+const sun=new THREE.DirectionalLight(0xffd2a0);sun.position.set(-9,18,12);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+Object.assign(sun.shadow.camera,{left:-20,right:20,top:16,bottom:-16,near:1,far:60});addLight(sun,.4);
+function pl(x,y,z,base,col){const l=new THREE.PointLight(col||0xffc98a,base,16,1.6);l.position.set(x,y,z);return addLight(l,base);}
+$('bright').addEventListener('input',e=>{bright=e.target.value/100;lights.forEach(o=>o.l.intensity=o.base*bright);});
+
+const MC={},PC={},BC={},GC={};
+const mat=c=>MC[c]||(MC[c]=new THREE.MeshLambertMaterial({color:c}));
+const pmat=c=>PC[c]||(PC[c]=new THREE.MeshPhongMaterial({color:c,shininess:10,specular:0x111111}));
+const bm=c=>BC[c]||(BC[c]=new THREE.MeshBasicMaterial({color:c}));
+const geo=(k,f)=>GC[k]||(GC[k]=f());
+function put(g,m,x,y,z,p){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;(p||scene).add(o);return o;}
+const box=(w,h,d,c,x,y,z,p)=>put(geo('b'+w+'_'+h+'_'+d,()=>new THREE.BoxGeometry(w,h,d)),mat(c),x,y,z,p);
+const sph=(r,c,x,y,z,p,sx,sy,sz)=>{const o=put(geo('s'+r,()=>new THREE.SphereGeometry(r,18,12)),mat(c),x,y,z,p);if(sx)o.scale.set(sx,sy||1,sz||1);return o;};
+const cone=(r,h,c,x,y,z,p)=>put(geo('n'+r+'_'+h,()=>new THREE.ConeGeometry(r,h,14)),mat(c),x,y,z,p);
+const cyl=(rt,rb,h,c,x,y,z,p)=>put(geo('c'+rt+'_'+rb+'_'+h,()=>new THREE.CylinderGeometry(rt,rb,h,18)),mat(c),x,y,z,p);
+const tor=(r,t,arc,c,x,y,z,p)=>put(geo('t'+r+'_'+t+'_'+arc,()=>new THREE.TorusGeometry(r,t,8,20,arc)),mat(c),x,y,z,p);
+const pbox=(w,h,d,c,x,y,z,p)=>put(geo('b'+w+'_'+h+'_'+d,()=>new THREE.BoxGeometry(w,h,d)),pmat(c),x,y,z,p);
+const pcyl=(rt,rb,h,c,x,y,z,p)=>put(geo('p'+rt+'_'+rb+'_'+h,()=>new THREE.CylinderGeometry(rt,rb,h,32)),pmat(c),x,y,z,p);
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function sprite(text,w,h,bg,fg,fs){const c=document.createElement('canvas');c.width=512;c.height=128;const g=c.getContext('2d');
+if(bg){g.fillStyle=bg;rr(g,4,4,504,120,28);g.fill();}
+g.fillStyle=fg;g.font='500 '+fs+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,256,68);
+const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:false}));s.scale.set(w,h,1);s.renderOrder=10;return s;}
+const anim={steams:[],leds:[],zs:[],bob:[],tails:[],twinkle:[]};
+function steam(x,y,z,n,p){for(let i=0;i<n;i++){const m=new THREE.Mesh(geo('st',()=>new THREE.SphereGeometry(.08,10,8)),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.5}));p.add(m);anim.steams.push({m,x,y,z,t:i/n,i});}}
+
+/* ---------- rooms ---------- */
+const R={
+work:{name:'Work floor',who:'Desks for Biscuit, Pebbles, Maple and Ginger',cx:-7,cz:4.75,x0:-12,x1:-2,z0:1.5,z1:8,col:'#6E4E35',dx:-7,dz:1.5,sz:3.4,r:12.5,say:'Four desks and one coffee habit. The team walks over from the lounge when Kaito hands out a task.'},
+dir:{name:'Director’s office',who:'Duke, the director',cx:-8,cz:-4.75,x0:-12,x1:-4,z0:-8,z1:-1.5,col:'#4B3426',dx:-8,dz:-1.5,sz:-2.7,r:10.5,say:'Shh. Duke is deliberating. Decisions arrive right after naps.'},
+it:{name:'IT corner',who:'Pixel’s desk (IT support)',cx:0,cz:-4.75,x0:-4,x1:4,z0:-8,z1:-1.5,col:'#3F434B',dx:0,dz:-1.5,sz:-2.7,r:10.5,say:'Pixel will ask if you tried turning it off and on again.'},
+hr:{name:'HR room',who:'Clover’s desk (HR)',cx:8,cz:-4.75,x0:4,x1:12,z0:-8,z1:-1.5,col:'#9C7F5E',dx:8,dz:-1.5,sz:-2.7,r:10.5,say:'Clover has a kind ear. Complaints go in the box, treats are free.'},
+mgr:{name:'Manager’s office',who:'Kaito, the manager',cx:1,cz:4.75,x0:-2,x1:4,z0:1.5,z1:8,col:'#C9C2B6',dx:1,dz:1.5,sz:3.3,r:9.5,say:'Kaito hands out tasks by skill and workload. Try the task desk below.'},
+brk:{name:'Break lounge',who:'Where the team waits between tasks',cx:8,cz:4.75,x0:4,x1:12,z0:1.5,z1:8,col:'#5A3D2A',dx:8,dz:1.5,sz:2.4,r:10.5,say:'Everyone waits here between tasks. Overloaded cats recover on the sofa.'}
+};
+const G={},groups=[],roomLabels=[];
+for(const id in R){const r=R[id],g=new THREE.Group();g.userData.room=id;scene.add(g);G[id]=g;groups.push(g);
+pbox(r.x1-r.x0-.05,.2,r.z1-r.z0-.05,r.col,r.cx,-.1,r.cz,g);
+const l=sprite(r.name,3.4,.85,'#2C2C2A','#F7F1E6',50);l.position.set(r.cx,3.6,r.cz-1.6);scene.add(l);roomLabels.push(l);}
+box(30,.4,22,'#2B2420',0,-.4,0);
+pbox(24,.2,3,'#A8A093',0,-.1,0);pbox(23,.02,1.1,'#5C4A3C',0,.02,0);
+const WALL='#D9CCB5';
+function wallH(z,x0,x1,h,gaps){let cur=x0;const gs=(gaps||[]).slice().sort((a,b)=>a-b);
+gs.concat([null]).forEach(gx=>{const end=gx===null?x1:gx-1.2;if(end>cur)box(end-cur,h,.25,WALL,(cur+end)/2,h/2,z);if(gx!==null)cur=gx+1.2;});}
+function wallV(x,z0,z1,h){box(.25,h,z1-z0,WALL,x,h/2,(z0+z1)/2);}
+const glassM=new THREE.MeshPhongMaterial({color:'#BFD6DA',transparent:true,opacity:.2,shininess:60});
+function glassV(x,z0,z1,h){const o=new THREE.Mesh(new THREE.BoxGeometry(.08,h,z1-z0),glassM);o.position.set(x,h/2,(z0+z1)/2);scene.add(o);box(.12,.06,z1-z0,'#3A2A20',x,h,(z0+z1)/2);}
+wallH(-8,-12,12,3);wallV(-12,-8,8,3);
+wallH(-1.5,-12,12,.7,[-8,0,8]);wallH(1.5,-12,12,.7,[-7,1,8]);wallH(8,-12,12,.3);
+wallV(-4,-8,-1.5,.7);wallV(4,-8,-1.5,.7);wallV(12,-8,8,.3);
+glassV(-2,1.5,8,1.5);glassV(4,1.5,8,1.5);
+const duskM=new THREE.MeshBasicMaterial({color:'#4D5B85',side:THREE.DoubleSide});
+function windowAt(x,z,rot,w){const g=new THREE.Group();g.position.set(x,1.9,z);g.rotation.y=rot;scene.add(g);
+const m=new THREE.Mesh(new THREE.PlaneGeometry(w,1.4),duskM);g.add(m);
+box(w+.2,.1,.1,'#3A2A20',0,.75,0,g);box(w+.2,.1,.1,'#3A2A20',0,-.75,0,g);box(.1,1.5,.1,'#3A2A20',-w/2-.05,0,0,g);box(.1,1.5,.1,'#3A2A20',w/2+.05,0,0,g);box(.06,1.4,.06,'#3A2A20',0,0,0,g);}
+[-8,0,8].forEach(x=>windowAt(x,-7.86,0,3));windowAt(-11.86,4.75,Math.PI/2,3);windowAt(11.86,4.75,-Math.PI/2,3);
+
+/* ---------- furniture ---------- */
+const BOOKS=['#A8553E','#2F5D5A','#C9A24B','#566079','#8B5E5E','#6F8F5A','#D8CBB5','#7E5A6B'];
+function shelf(p,cx,cz,len,rot){const g=new THREE.Group();g.position.set(cx,0,cz);g.rotation.y=rot;p.add(g);
+box(len,2.1,.1,'#4A3322',0,1.05,-.2,g);box(.06,2.1,.45,'#6B4A2E',-len/2,1.05,0,g);box(.06,2.1,.45,'#6B4A2E',len/2,1.05,0,g);
+let s=Math.floor(len*17)+3;const rnd=()=>{s=(s*9301+49297)%233280;return s/233280;};
+for(let l=0;l<4;l++){const y=.3+l*.5;box(len,.05,.42,'#6B4A2E',0,y-.03,0,g);
+let x=-len/2+.12;while(x<len/2-.2){const w=.09+rnd()*.07,h=.28+rnd()*.14;box(w,h,.26,BOOKS[(rnd()*BOOKS.length)|0],x+w/2,y+h/2,0,g);x+=w+.01;}}
+box(len,.06,.42,'#6B4A2E',0,2.1,0,g);}
+function plant(p,x,z){pcyl(.3,.24,.5,'#B4684A',x,.25,z,p);[[0,.95,0,.38,'#4F8A2B'],[.22,.72,.1,.28,'#5E9B38'],[-.22,.8,-.1,.3,'#3F7A22'],[0,1.25,.05,.24,'#5E9B38']].forEach(a=>sph(a[3],a[4],x+a[0],a[1],z+a[2],p));}
+function rug(p,x,z,w,d,c1,c2){pbox(w,.03,d,c1,x,.02,z,p);pbox(w-.5,.035,d-.5,c2,x,.025,z,p);}
+function rrug(p,x,z,r,c1,c2){pcyl(r,r,.03,c1,x,.02,z,p);pcyl(r-.5,r-.5,.035,c2,x,.025,z,p);}
+function chair(p,x,z,c){box(.9,.12,.9,c,x,.55,z,p);box(.9,.95,.12,c,x,1.08,z-.45,p);cyl(.07,.07,.5,'#3A2E26',x,.28,z,p);box(.7,.06,.7,'#3A2E26',x,.03,z,p);}
+function desk(p,x,z,w,d,c){box(w,.1,d,c,x,.9,z,p);box(.1,.85,d-.1,'#3A2A20',x-w/2+.1,.45,z,p);box(.1,.85,d-.1,'#3A2A20',x+w/2-.1,.45,z,p);box(w-.2,.5,.08,c,x,.6,z-d/2+.1,p);}
+function monitor(p,x,z,col){box(.1,.25,.1,'#444441',x,1.05,z,p);box(1,.62,.07,'#2A2A28',x,1.4,z,p);const s=new THREE.Mesh(new THREE.PlaneGeometry(.9,.52),bm(col));s.position.set(x,1.4,z-.04);s.rotation.y=Math.PI;p.add(s);}
+function papers(p,x,y,z,n){for(let i=0;i<n;i++)box(.7,.04,.5,i%3===2?'#FAC775':'#F4EFE4',x+(i%2)*.04,y+i*.045,z,p).rotation.y=i*.15;}
+function lamp(p,x,z){cyl(.05,.05,1.5,'#3A2E26',x,.75,z,p);cyl(.22,.34,.4,'#FFE2B0',x,1.7,z,p).material=bm('#FFE2B0');cyl(.28,.28,.05,'#3A2E26',x,.03,z,p);}
+function pendant(p,x,z,y){cyl(.01,.01,1.2,'#222222',x,y+.7,z,p);const s=sph(.3,'#FFE2B0',x,y,z,p,1,.65,1);s.material=bm('#FFE2B0');}
+function picture(p,x,y,z,w,h){box(w,h,.06,'#3A2A20',x,y,z,p);box(w-.14,h-.14,.07,'#EADBC0',x,y,z,p);box(w*.3,h*.5,.08,'#C0704A',x-w*.15,y-h*.05,z,p);box(w*.28,h*.3,.08,'#2F5D5A',x+w*.15,y+h*.12,z,p);}
+function sofa(p,x,z,rot,col){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;p.add(g);
+box(2.6,.5,1.05,col,0,.3,0,g);box(2.6,.85,.3,col,0,.75,-.4,g);box(.3,.7,1.05,col,-1.3,.45,0,g);box(.3,.7,1.05,col,1.3,.45,0,g);
+box(.7,.3,.2,'#D8CBB5',-.6,.7,-.15,g).rotation.z=.2;box(.7,.3,.2,'#C9A24B',.6,.7,-.15,g).rotation.z=-.2;}
+function armchair(p,x,z,rot,col){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;p.add(g);
+box(1.1,.5,1.1,col,0,.3,0,g);box(1.1,.8,.28,col,0,.75,-.42,g);box(.22,.6,1.1,col,-.55,.45,0,g);box(.22,.6,1.1,col,.55,.45,0,g);}
+
+/* ---------- cats ---------- */
+function cat(o){
+const g=new THREE.Group(),F=o.fur,F2=o.fur2||F,P=o.paw||F,T=o.type,Pe=!!o.persian;
+const legs=[-.2,.2].map(x=>{const l=new THREE.Group();l.position.set(x,.5,0);g.add(l);cyl(.12,.1,.5,o.pants,0,-.25,0,l);sph(.13,P,0,-.5,.06,l,1,.6,1.3);return l;});
+const tr=cyl(.4,.5,.95,o.out,0,.95,0,g);tr.scale.z=.85;sph(.4,o.out,0,1.42,0,g,1,.55,.85);
+[-1,1].forEach(s=>{sph(.14,o.out,s*.5,1.15,.1,g,1,1.4,1);sph(.1,P,s*.52,.8,.22,g);});
+sph(.43,F,0,1.92,.05,g,Pe?1.14:1,Pe?.95:1,1);
+[-1,1].forEach(s=>{sph(Pe?.27:.2,F2,s*(Pe?.31:.22),1.82,.3,g,1,.8,.8);
+const e=cone(Pe?.15:.16,Pe?.26:.34,F,s*.27,Pe?2.27:2.3,0,g);e.rotation.z=-s*.25;const ei=cone(.09,Pe?.15:.2,'#F2A6B8',s*.27,Pe?2.25:2.28,.05,g);ei.rotation.z=-s*.25;
+for(let i=0;i<3;i++){const w=box(.34,.012,.012,'#F5EEE4',s*.4,1.82+(i-1)*.06,.4,g);w.rotation.z=s*(i-1)*.18;}
+if(o.sleep){const l=box(.16,.03,.02,'#444441',s*.17,1.98,.46,g);l.rotation.z=s*.2;}
+else{sph(Pe?.1:.08,o.eye,s*.17,1.97,.37,g,1,1.15,.5);box(.025,.11,.02,'#111111',s*.17,1.97,.44,g);}
+if(Pe)sph(.14,F,s*.38,2.08,.1,g);});
+sph(.15,'#F5EEE4',0,1.8,Pe?.39:.4,g,1.1,.7,.7);sph(Pe?.035:.04,Pe?'#E7A0B0':'#E08AA0',0,1.86,Pe?.49:.52,g);
+if(Pe)sph(.26,F,0,1.55,.22,g,1.4,.7,.75);
+if(o.pat==='tabby')for(let i=-1;i<=1;i++)box(.05,.18,.03,F2,i*.12,2.22,.37,g);
+if(o.pat==='calico'){sph(.17,'#E8903A',-.2,2.17,.25,g,1,.8,.5);sph(.15,'#3A3A3A',.22,2.12,.27,g,1,.8,.5);}
+if(o.pat==='tortie'){sph(.17,'#D98A3A',-.18,2.17,.26,g,1,.8,.5);sph(.14,'#2E2420',.2,2.14,.27,g,1,.8,.5);sph(.1,'#D98A3A',.1,1.75,.38,g,1,.8,.4);}
+if(o.pat==='fluffy'){sph(.22,F,-.4,1.85,.05,g);sph(.22,F,.4,1.85,.05,g);sph(.2,F,0,2.28,.05,g);}
+const tg=new THREE.Group();tg.position.set(0,.75,-.4);g.add(tg);
+const big=(o.pat==='fluffy'||Pe)?1.5:1;
+[[0,0,0,.13],[0,.14,-.2,.12],[0,.34,-.32,.11],[0,.55,-.34,.1]].forEach((a,i)=>sph(a[3]*big,i===3?F2:F,a[0],a[1],a[2],tg));anim.tails.push(tg);
+if(T==='suit'||T==='bow'||T==='manager'){
+box(.24,.72,.05,'#F7F7F2',0,1.12,.4,g);
+[-1,1].forEach(s=>{const l=box(.13,.56,.05,o.out2,s*.17,1.1,.41,g);l.rotation.z=s*.22;});
+if(T==='bow'){[-1,1].forEach(s=>{const b=cone(.1,.2,o.tie,s*.12,1.5,.4,g);b.rotation.z=-s*Math.PI/2;});sph(.05,o.tie,0,1.5,.42,g);}
+else{box(.09,.5,.04,o.tie,0,1.0,.44,g);box(.11,.1,.05,o.tie,0,1.38,.43,g);}
+if(T==='manager'){box(.5,.65,.04,'#8B6B4A',.62,.95,.38,g);box(.4,.55,.045,'#FFFFFF',.62,.95,.4,g);}}
+if(T==='cardigan'){box(.26,.72,.05,'#F7F7F2',0,1.12,.4,g);[1.3,1.1,.9].forEach(y=>sph(.04,'#4A3A2A',.14,y,.43,g));
+if(o.glasses){[-1,1].forEach(s=>tor(.11,.02,Math.PI*2,'#1b1b1b',s*.17,1.98,.46,g));box(.08,.02,.02,'#1b1b1b',0,1.99,.47,g);}}
+if(T==='shirt'){box(.3,.7,.05,o.out2,0,1.12,.4,g);[-1,1].forEach(s=>{box(.14,.1,.05,'#F7F7F2',s*.1,1.48,.38,g).rotation.z=s*.5;});
+box(.03,.55,.03,'#E8C25A',-.1,1.15,.44,g);box(.12,.14,.03,'#F7F7F2',-.1,.85,.44,g);}
+if(T==='hoodie'){sph(.33,o.out,0,1.55,-.3,g,1.3,.8,.7);box(.025,.3,.02,'#EDE6D6',-.1,1.2,.42,g);box(.025,.3,.02,'#EDE6D6',.1,1.2,.42,g);box(.55,.22,.06,o.out2,0,.8,.43,g);
+tor(.45,.03,Math.PI,'#1b1b1b',0,1.92,.05,g);box(.1,.2,.14,'#1b1b1b',-.45,1.9,.05,g);box(.1,.2,.14,'#1b1b1b',.45,1.9,.05,g);cyl(.015,.015,.3,'#1b1b1b',.36,1.62,.3,g).rotation.z=1.2;}
+if(T==='blouse'){[-1,1].forEach(s=>{box(.14,.1,.05,'#F7F7F2',s*.1,1.48,.38,g).rotation.z=s*.5;});
+tor(.36,.07,Math.PI*2,o.out2,0,1.5,.04,g).rotation.x=Math.PI/2;sph(.09,o.out2,.14,1.42,.34,g);box(.1,.35,.04,o.out2,.14,1.22,.4,g);}
+if(T==='vest'){box(.24,.72,.05,'#F7F7F2',0,1.12,.4,g);[-1,1].forEach(s=>box(.2,.7,.05,o.out,s*.2,1.1,.42,g));box(.1,.07,.03,'#E8C25A',.2,1.25,.46,g);}
+g.userData.legs=legs;return g;}
+
+const CD={
+biscuit:{name:'Biscuit',role:'Sales',quirk:'Closes deals with charm and far too much coffee.',fur:'#E8903A',fur2:'#B8601E',eye:'#7FC06A',pat:'tabby',type:'suit',out:'#27406B',out2:'#1C2E4D',tie:'#B53A3A',pants:'#1C2E4D'},
+pebbles:{name:'Pebbles',role:'Analytics',quirk:'Finds the one wrong number in any spreadsheet.',fur:'#9AA0A6',fur2:'#6C7278',eye:'#E6C84A',pat:'tabby',type:'cardigan',glasses:true,out:'#C9AE86',out2:'#A88F68',pants:'#4A4036'},
+pixel:{name:'Pixel',role:'IT support',quirk:'Fixes anything, but will ask if you restarted it first.',fur:'#2B2B30',fur2:'#44444A',eye:'#C8E04A',type:'hoodie',out:'#566079',out2:'#434B60',pants:'#2C2C30'},
+clover:{name:'Clover',role:'HR',quirk:'Keeps treats in the drawer for hard days.',fur:'#F4EEE4',fur2:'#E8D8C0',eye:'#6FB7A0',pat:'calico',type:'blouse',out:'#8FB79A',out2:'#D88FA0',pants:'#5A4A44'},
+maple:{name:'Maple',role:'Staff',quirk:'A dependable all-rounder who never complains about the schedule.',fur:'#5A4034',fur2:'#3E2C24',eye:'#7FC06A',pat:'tortie',type:'shirt',out:'#6C93B8',out2:'#DCE6EF',pants:'#34404E'},
+ginger:{name:'Ginger',role:'Staff',quirk:'Steady, cheerful, and first to offer to cover a shift.',fur:'#F2B866',fur2:'#D9953E',eye:'#8FB84A',pat:'tabby',type:'shirt',out:'#8C9A5B',out2:'#F1EBDD',pants:'#4B4F36'},
+duke:{name:'Duke',role:'Director',quirk:'Approves things after long, mostly asleep deliberation.',fur:'#EBD9B4',fur2:'#D7C095',eye:'#6FA8DC',pat:'fluffy',type:'bow',out:'#2F2F35',out2:'#222228',tie:'#9B2C2C',sleep:true,pants:'#222228'},
+kaito:{name:'Kaito',role:'Manager',quirk:'Assigns work by skill and workload, never by favourites.',fur:'#FBF8F2',fur2:'#EDE5D6',eye:'#C8742A',persian:true,type:'manager',out:'#4A2F3C',out2:'#36212B',tie:'#C9A24B',pants:'#36212B'},
+mittens:{name:'Mittens',role:'Office guide',quirk:'Walks you into any room and knows all the gossip.',fur:'#2F2F35',fur2:'#44444A',eye:'#7FC06A',paw:'#F5EEE4',type:'vest',out:'#2F7F7A',out2:'#235E5A',pants:'#2C2C30'}};
+const IDS=['kaito','duke','mittens','biscuit','pebbles','pixel','clover','maple','ginger'];
+const catGroups=[],CG={};
+function place(id,x,z,s){const g=cat(CD[id]);const bs=Array.isArray(s)?s:[s||1,s||1,s||1];g.position.set(x,0,z);g.scale.set(bs[0],bs[1],bs[2]);g.userData.cat=id;g.userData.bs=bs;scene.add(g);catGroups.push(g);CG[id]=g;
+const l=sprite(CD[id].name,1.7,.42,'#2C2C2A','#F7F1E6',52);l.position.set(0,3.1,0);g.add(l);return g;}
+
+/* ---------- room contents ---------- */
+let p=G.work;
+rug(p,-7,4.6,7.4,4.4,'#8B6F52','#C9B28F');
+[[-10.8,2.7],[-3.2,2.7],[-8.8,5.4],[-5.2,5.4]].forEach((d,i)=>{desk(p,d[0],d[1]+1.5,2.2,1.1,'#8A6240');chair(p,d[0],d[1],'#3F5A52');monitor(p,d[0]-.35,d[1]+1.2,['#7FB0A8','#85B7EB','#E8B65C','#7FEA9E'][i]);});
+cyl(.13,.13,.22,'#F7F1E6',-10.1,1.06,4.5,p);steam(-10.1,1.25,4.5,6,p);papers(p,-2.6,.96,4.5,4);
+plant(p,-11.2,7.4);plant(p,-2.5,2.2);shelf(p,-11.65,6.3,2.2,Math.PI/2);lamp(p,-2.45,7.3);pl(-7,2.8,4.6,1.4);
+
+p=G.dir;
+rug(p,-8,-3.9,5.6,3.4,'#7A4A3A','#D4C2A4');desk(p,-8,-4.2,3.4,1.4,'#5A3C27');chair(p,-8,-5.8,'#2F2A28');
+papers(p,-7.2,.96,-4.3,9);monitor(p,-8.9,-4.6,'#E8B65C');
+shelf(p,-11.65,-5.2,2.8,Math.PI/2);plant(p,-4.8,-7.3);plant(p,-11.2,-2.4);
+picture(p,-10.4,2.1,-7.86,1.2,1.5);picture(p,-5.6,2.1,-7.86,1.2,1.5);lamp(p,-4.6,-2.5);pendant(p,-8,-4.2,2.8);pl(-8,2.8,-4.8,1.2);
+for(let i=0;i<3;i++){const z=sprite(i===1?'Z':'z',.7+i*.15,.18+i*.04,null,'#C9B8F0',100);z.position.set(-7.2+i*.4,3.3+i*.45,-5.8);scene.add(z);anim.zs.push({s:z,i,y:3.3+i*.45});}
+
+p=G.it;
+rug(p,0,-4.4,5,3,'#3A3F48','#565C68');desk(p,-.3,-4.2,3.4,1.2,'#3E3A36');chair(p,-.3,-5.7,'#2B2B30');
+[[-1.1,'#5DE0FF'],[-.3,'#7FEA9E'],[.5,'#5DE0FF']].forEach(a=>monitor(p,a[0],-4.65,a[1]));
+box(1,2.4,1,'#2C2C2A',2.9,1.2,-6.6,p);
+for(let r=0;r<6;r++)for(let k=0;k<2;k++){const m=new THREE.MeshBasicMaterial({color:'#7FEA9E'});const l=new THREE.Mesh(geo('led',()=>new THREE.BoxGeometry(.12,.08,.04)),m);l.position.set(2.65+k*.25,.5+r*.3,-6.07);p.add(l);anim.leds.push(m);}
+[[1.2,-2.9,.3,'#EF9F27'],[1.8,-3.6,-.4,'#7F77DD']].forEach(a=>{box(a[0]*1.6,.03,.07,a[3],a[1]+1.5,.03,-3+a[2]*.4,p).rotation.y=a[2];});
+shelf(p,-3.65,-4.8,2.2,Math.PI/2);plant(p,3.2,-2.3);plant(p,-3.2,-7.3);picture(p,-1.8,2.1,-7.86,1.3,1);
+sph(.14,'#FFE2B0',1.05,1.1,-4.5,p).material=bm('#FFE2B0');pl(0,2.8,-4.8,1.1,0xffe3c2);
+
+p=G.hr;
+rrug(p,8,-4.3,2.4,'#8FA88F','#B9CDB5');pcyl(.9,.9,.08,'#8B6B4A',8,.8,-4.3,p);cyl(.12,.12,.8,'#5C4330',8,.4,-4.3,p);box(.3,.2,.2,'#F4C0D1',8.3,.94,-4.3,p);
+chair(p,8,-5.9,'#8FB79A');sofa(p,5.3,-5.2,Math.PI/2,'#7E5A6B');
+shelf(p,11.65,-5.2,2.4,-Math.PI/2);plant(p,11.2,-7.3);plant(p,4.6,-2.4);picture(p,6,2.1,-7.86,1.2,1.5);picture(p,10.3,2.1,-7.86,1.2,1.5);lamp(p,11.2,-2.4);pendant(p,8,-4.3,2.7);pl(8,2.8,-4.8,1.2);
+
+p=G.mgr;
+rug(p,1,4.2,4.4,3,'#6E625A','#A89A8A');
+desk(p,1,5.9,3,1.3,'#5A3C27');chair(p,1,4.4,'#3B2F2A');monitor(p,.3,5.35,'#7FB0A8');papers(p,1.9,.96,5.6,5);
+box(1.9,1.3,.08,'#6B4A2E',3,1.5,2.6,p);box(1.7,1.1,.05,'#F1EBDD',3,1.5,2.64,p);
+[2.43,3.0,3.57].forEach(x=>box(.02,1,.03,'#B4A58A',x,1.5,2.67,p));
+[['#FAC775',2.2,1.8],['#F4C0D1',2.2,1.4],['#B5D4F4',2.8,1.7],['#C0DD97',3.35,1.8],['#FAC775',3.35,1.4]].forEach(a=>box(.3,.3,.02,a[0],a[1],a[2],2.68,p));
+cyl(.04,.04,.9,'#6B4A2E',2.2,.45,2.6,p);cyl(.04,.04,.9,'#6B4A2E',3.8,.45,2.6,p);
+shelf(p,-1.65,7,1.6,Math.PI/2);plant(p,3.4,7.3);plant(p,-1.3,2.3);pl(1,2.8,4.5,1.2);
+
+p=G.brk;
+rrug(p,7.6,4.2,2.6,'#A8553E','#C98266');
+sofa(p,4.85,4.2,Math.PI/2,'#2F5D5A');
+pcyl(.6,.6,.08,'#3A2A20',6.6,.5,4.2,p);cyl(.1,.1,.5,'#3A2A20',6.6,.25,4.2,p);cyl(.1,.1,.12,'#F7F1E6',6.5,.6,4.2,p);steam(6.5,.75,4.2,4,p);
+armchair(p,10.6,4,-Math.PI/2,'#7E5A6B');
+box(6,.95,.9,'#3A2A20',8,.475,7.2,p);pbox(6.2,.08,1,'#B9A98F',8,.99,7.2,p);
+box(.7,.85,.6,'#5A5A58',9.8,1.45,7.2,p);cyl(.1,.1,.18,'#F7F1E6',9.8,1.1,6.85,p);cyl(.22,.26,.4,'#B4B2A9',7.2,1.25,7.2,p);steam(7.2,1.5,7.2,6,p);
+[6.6,8,9.4].forEach(x=>{cyl(.3,.3,.12,'#A8553E',x,.78,6.2,p);cyl(.05,.05,.7,'#3A2A20',x,.38,6.2,p);});
+pendant(p,7,6.8,2.7);pendant(p,9,6.8,2.7);
+for(let i=0;i<15;i++){const t=i/14,x=4.3+t*7.4,y=2.8-Math.sin(t*Math.PI)*.35;const b=sph(.06,'#FFD58A',x,y,1.9,p);b.material=new THREE.MeshBasicMaterial({color:'#FFD58A'});anim.twinkle.push({m:b.material,i});}
+[3.1,6.4].forEach(z=>box(.14,2.5,.5,'#8B5E5E',11.75,1.25,z,p));
+shelf(p,11.65,2.45,1.3,-Math.PI/2);plant(p,11.2,7.4);plant(p,4.6,7.3);pl(8,2.8,4.4,1.4,0xffb878);
+plant(scene,-11.4,.9);pl(0,2.4,0,.8);
+
+/* ---------- people and state ---------- */
+function walkerOf(g,sp){return {g,legs:g.userData.legs,path:[],t:0,hop:0,done:null,sp:sp||3.2};}
+const bot=walkerOf(place('mittens',-10.5,0,.78),3.4);
+const SPOTS=[[6.3,3.0],[9.0,3.2],[6.3,5.4],[8.4,5.3],[9.8,2.9],[9.7,5.4]];
+const W={
+biscuit:{skills:{sales:9,people:7,data:4,tech:2,admin:5},desk:[[-7,0],[-7,1.5],[-7,2.7],[-10.8,2.7]],load:15},
+pebbles:{skills:{data:9,admin:7,tech:4,sales:3,people:4},desk:[[-7,0],[-7,1.5],[-7,2.7],[-3.2,2.7]],load:30},
+pixel:{skills:{tech:9,data:5,admin:4,people:3,sales:2},desk:[[0,0],[0,-2.6],[2,-2.6],[2,-5.7],[-.3,-5.7]],load:10},
+clover:{skills:{people:9,admin:6,sales:5,data:3,tech:2},desk:[[8,0],[8,-2.6],[9.8,-2.6],[9.8,-5.9],[8,-5.9]],load:20},
+maple:{skills:{tech:6,people:6,data:6,sales:6,admin:6},desk:[[-7,0],[-7,1.5],[-7,5.4],[-8.8,5.4]],load:5},
+ginger:{skills:{tech:6,people:6,data:6,sales:6,admin:6},desk:[[-7,0],[-7,1.5],[-7,5.4],[-5.2,5.4]],load:12}};
+const WIDS=Object.keys(W);
+WIDS.forEach((id,i)=>{const c=W[id];c.id=id;c.name=CD[id].name;c.role=CD[id].role;c.spot=SPOTS[i];
+c.phase='lounge';c.rest=false;c.task='';c.tleft=0;c.done=0;c.back=[];
+c.w=walkerOf(place(id,c.spot[0],c.spot[1],1),4.2);});
+place('duke',-8,-5.8,[1.2,1.1,1.1]);anim.bob.push(CG.duke);
+place('kaito',1,4.4,1.05);
+let tick=0,dukeUntil=0,dukeTask='',kaitoUntil=0,mTarget='';
+const hist=[];
+
+function skillStr(c){const k=Object.keys(c.skills);if(k.every(x=>c.skills[x]===c.skills[k[0]]))return 'all-rounder, '+c.skills[k[0]]+' in every skill';return k.map(x=>x+' '+c.skills[x]).join(', ');}
+function locOf(){const x=bot.g.position.x,z=bot.g.position.z;if(z<-1.6)return x<-4?'dir':x<4?'it':'hr';if(z>1.6)return x<-2?'work':x<4?'mgr':'brk';return x<-9.5?'home':'hall';}
+function statusOf(id){
+const c=W[id];
+if(c){
+if(c.phase==='assigned')return{label:'Got a task: '+c.task,short:'Working',kind:'warn'};
+if(c.phase==='toDesk')return{label:'Heading to desk for '+c.task,short:'Working',kind:'warn'};
+if(c.phase==='working')return{label:'Working on '+c.task+' ('+Math.max(1,Math.ceil(c.tleft))+'s left)',short:'Working',kind:'warn'};
+if(c.phase==='toLounge')return{label:'Heading back to the lounge',short:'Working',kind:'warn'};
+if(c.rest||c.load>=70)return{label:'Resting in the lounge',short:'Resting',kind:'rest'};
+return{label:'Available in the lounge',short:'Available',kind:'ok'};}
+if(id==='duke')return tick<dukeUntil?{label:'Reviewing: '+dukeTask,short:'Reviewing',kind:'warn'}:{label:'Napping in the director’s office',short:'Napping',kind:'info'};
+if(id==='kaito')return tick<kaitoUntil?{label:'Assigning a task',short:'Assigning',kind:'warn'}:{label:'At the task desk',short:'Managing',kind:'info'};
+if(bot.path.length)return{label:'Walking to the '+mTarget,short:'Guiding',kind:'warn'};
+const l=locOf();return l==='home'?{label:'Waiting in the hallway until called',short:'Waiting',kind:'info'}:{label:'In the '+(R[l]?R[l].name.toLowerCase():'hallway'),short:'Here',kind:'info'};}
+const KC={ok:'#8CC861',warn:'#E8A04E',rest:'#7FAEDD',info:'#B3A793'};
+
+/* ---------- status panel and card ---------- */
+const sp=$('sp'),spList=$('splist'),spCount=$('spcount'),rowEls={};
+IDS.forEach(id=>{const b=document.createElement('button');b.className='sr';b.setAttribute('aria-label','Show '+CD[id].name+', '+CD[id].role.toLowerCase());
+const d=document.createElement('i');d.className='dot';const n=document.createElement('span');n.className='nm';n.textContent=CD[id].name;b.title=CD[id].role;
+const s=document.createElement('span');s.className='st';b.append(d,n,s);b.onclick=()=>selectCat(id);spList.appendChild(b);rowEls[id]={d,s};});
+$('sptog').addEventListener('click',()=>{const shut=sp.classList.toggle('shut');$('sptog').setAttribute('aria-expanded',String(!shut));});
+if(stage.clientWidth<640){sp.classList.add('shut');$('sptog').setAttribute('aria-expanded','false');}
+function updateStatus(){let a=0;IDS.forEach(id=>{const s=statusOf(id);rowEls[id].s.textContent=s.short;rowEls[id].d.style.background=KC[s.kind];if(W[id]&&s.short==='Available')a++;});
+spCount.textContent=a+' of '+WIDS.length+' available';if(cardId)renderCard();}
+let cardId=null,cardText='';
+const cName=$('cName'),cRole=$('cRole'),cStat=$('cStat'),cBar=$('cBar'),cBarWrap=$('cBarWrap'),cLoad=$('cLoad'),cMeta=$('cMeta'),cQuirk=$('cQuirk');
+function renderCard(){const d=CD[cardId],s=statusOf(cardId),c=W[cardId];cName.textContent=d.name;cRole.textContent=d.role;cStat.textContent=s.label;cStat.style.color=KC[s.kind];
+if(c){cBarWrap.style.display='flex';const l=Math.round(c.load);cBar.style.width=l+'%';cBar.style.background=l>=70?'#E8A04E':'#6CC4BC';cLoad.textContent=l+'%';cMeta.textContent='Workload '+l+' of 100. Tasks done: '+c.done+'. Skills: '+skillStr(c)+'.';}
+else{cBarWrap.style.display='none';cMeta.textContent=cardId==='kaito'?'Scores skill × 10 − workload for every task.':'';}
+cQuirk.textContent=cardText||d.quirk;}
+function openCard(id,text){cardId=id;cardText=text||'';card.style.display='block';renderCard();}
+function closeCard(){cardId=null;card.style.display='none';}
+$('cClose').addEventListener('click',closeCard);
+['pointerdown','wheel'].forEach(ev=>{card.addEventListener(ev,e=>e.stopPropagation());sp.addEventListener(ev,e=>e.stopPropagation(),{passive:true});});
+
+/* ---------- camera, rooms, tour, Mittens ---------- */
+const cs={tx:0,ty:.4,tz:-1.2,th:0,phi:.85,r:26},cg=Object.assign({},cs),OV={tx:0,ty:.4,tz:-1.2,th:0,phi:.85,r:26};
+let focusedRoom=null,followId=null,tourTimer=null,tourI=0;
+const chips=[...document.querySelectorAll('#bar button[data-r]')];
+function aim(id){const r=R[id];Object.assign(cg,{tx:r.cx,ty:.6,tz:r.cz,th:0,phi:.8,r:r.r});chips.forEach(b=>b.classList.toggle('on',b.dataset.r===id));}
+function focusRoom(id){focusedRoom=id;followId=null;closeCard();aim(id);cap.textContent=R[id].name+'. '+R[id].say;}
+function overview(){focusedRoom=null;followId=null;closeCard();Object.assign(cg,OV);chips.forEach(b=>b.classList.toggle('on',b.dataset.r==='all'));cap.textContent='Drag to rotate, scroll to zoom, double-click to reset. Click a room or a cat.';}
+function selectCat(id){stopTour();followId=id;chips.forEach(b=>b.classList.remove('on'));Object.assign(cg,{ty:1.1,th:0,phi:.75,r:9});openCard(id);cap.textContent=CD[id].name+', '+CD[id].role.toLowerCase()+'. '+statusOf(id).label+'.';}
+function go(pts,cb){bot.path=pts;bot.done=cb||null;}
+function route(id){const loc=locOf(),pts=[],pos=bot.g.position;
+if(R[loc]){const r=R[loc];if(id===loc){pts.push([r.dx,R[id].sz]);return pts;}pts.push([r.dx,pos.z],[r.dx,r.dz],[r.dx,0]);}
+if(id==='hall')pts.push([0,0]);
+else{const r=R[id];pts.push([r.dx,0],[r.dx,r.dz],[r.dx,r.sz]);}return pts;}
+function callMittens(){stopTour();
+if(!focusedRoom){mTarget='hallway';go(route('hall'),()=>{selectCat('mittens');openCard('mittens','Pick a room first, then call me and I’ll trot right in.');});return;}
+const id=focusedRoom;mTarget=R[id].name.toLowerCase();closeCard();
+go(route(id),()=>{followId='mittens';Object.assign(cg,{ty:1.1,th:0,phi:.75,r:9});openCard('mittens',R[id].say);});}
+const tourBtn=$('tour'),ORDER=['work','mgr','brk','hr','it','dir'];
+function stopTour(){if(tourTimer){clearInterval(tourTimer);tourTimer=null;tourBtn.classList.remove('on');tourBtn.textContent='Start tour';}}
+tourBtn.addEventListener('click',()=>{if(tourTimer){stopTour();overview();return;}tourBtn.classList.add('on');tourBtn.textContent='Stop tour';tourI=0;focusRoom(ORDER[0]);
+tourTimer=setInterval(()=>{tourI++;if(tourI>=ORDER.length){stopTour();overview();return;}focusRoom(ORDER[tourI]);},6000);});
+chips.forEach(b=>b.addEventListener('click',()=>{stopTour();b.dataset.r==='all'?overview():focusRoom(b.dataset.r);}));
+$('callbot').addEventListener('click',callMittens);
+
+/* ---------- Kaito's task desk ---------- */
+const TASKS={server:{label:'Fix the server',skill:'tech',add:30,min:6,time:16},complaint:{label:'Handle a complaint',skill:'people',add:20,min:6,time:12},report:{label:'Analyze a report',skill:'data',add:25,min:6,time:14},deal:{label:'Close a deal',skill:'sales',add:30,min:6,time:16},budget:{label:'Approve the budget',skill:'admin',add:15,min:8,time:10}};
+const tasksEl=$('tasks'),resEl=$('result'),loadsEl=$('loads'),histEl=$('hist');
+for(const id in TASKS){const b=document.createElement('button');b.className='btn';b.textContent=TASKS[id].label;b.onclick=()=>assign(id);tasksEl.appendChild(b);}
+const rb=document.createElement('button');rb.className='btn';rb.textContent='Reset workloads';rb.onclick=()=>{WIDS.forEach(id=>{W[id].load=0;W[id].rest=false;});resEl.textContent='';updateBars();};tasksEl.appendChild(rb);
+const barEls={};
+WIDS.forEach(id=>{const d=document.createElement('div');d.className='lr';const n=document.createElement('span');n.textContent=W[id].name;
+const t=document.createElement('div');t.className='t';const f=document.createElement('i');t.appendChild(f);const s=document.createElement('span');s.className='s';d.append(n,t,s);loadsEl.appendChild(d);barEls[id]={f,s};});
+function updateBars(){WIDS.forEach(id=>{const c=W[id],e=barEls[id],l=Math.round(c.load);e.f.style.width=l+'%';e.f.style.background=l>=70?'var(--warn)':'var(--accent)';e.s.textContent=statusOf(id).short.toLowerCase()+', '+l;});}
+function row(cells,hd,win){const d=document.createElement('div');d.className='grid'+(hd?' hd':'')+(win?' win':'');cells.forEach(t=>{const s=document.createElement('span');s.textContent=t;d.appendChild(s);});return d;}
+function addHist(t){hist.unshift(t);if(hist.length>6)hist.pop();histEl.innerHTML='';hist.forEach(h=>{const li=document.createElement('li');li.textContent=h;histEl.appendChild(li);});}
+const flights=[];
+function fly(label,from,to,done){const s=sprite(label,2.1,.52,'#F7F1E6','#2C2C2A',46);s.position.copy(from);scene.add(s);flights.push({s,from,to,t:0,done});}
+function assign(tid){const T=TASKS[tid];overview();
+const rows=WIDS.map(id=>{const c=W[id],load=Math.round(c.load),sk=c.skills[T.skill];return{id,c,sk,load,score:sk*10-load,busy:c.phase!=='lounge',rest:c.rest||c.load>=70};});
+const ok=rows.filter(r=>!r.busy&&!r.rest&&r.sk>=T.min).sort((a,b)=>b.score-a.score||a.load-b.load);const win=ok[0]||null;
+resEl.innerHTML='';const h=document.createElement('div');h.style.cssText='font-size:13px;margin-bottom:4px';h.textContent=T.label+' needs '+T.skill+' skill, minimum '+T.min+'.';resEl.appendChild(h);
+resEl.appendChild(row(['Cat','Skill','Load','Score'],true));
+rows.forEach(r=>resEl.appendChild(row([r.c.name,r.sk,r.load,r.busy?'working':r.rest?'resting':r.score],false,win&&win.id===r.id)));
+const m=document.createElement('div');m.style.cssText='font-size:13px;color:var(--muted);margin-top:6px';
+kaitoUntil=tick+2.4;
+if(win){const c=win.c;m.textContent='Kaito picks '+c.name+': '+win.sk+' × 10 − '+win.load+' = '+win.score+'.';c.load=Math.min(100,c.load+T.add);c.phase='assigned';c.task=T.label.toLowerCase();
+addHist('Kaito gave “'+T.label+'” to '+c.name+' (score '+win.score+')');
+fly(T.label,new THREE.Vector3(1,3.2,4.4),new THREE.Vector3(c.w.g.position.x,3.3,c.w.g.position.z),()=>{c.phase='toDesk';
+c.w.path=[[8,2.6],[8,0]].concat(c.desk);c.back=c.desk.slice(0,-1).reverse().concat([[8,0],[8,2.6],c.spot]);
+c.w.done=()=>{c.phase='working';c.tleft=T.time;};updateBars();});}
+else{m.textContent=ok.length===0&&rows.some(r=>!r.busy&&!r.rest&&r.sk>=T.min)?'':'No available cat meets the minimum skill, so Kaito escalates this to Duke, who will decide after a nap.';
+dukeUntil=tick+9;dukeTask=T.label.toLowerCase();addHist('Kaito escalated “'+T.label+'” to Duke');
+fly(T.label,new THREE.Vector3(1,3.2,4.4),new THREE.Vector3(-8,3.3,-5.8),null);}
+resEl.appendChild(m);updateBars();}
+
+/* ---------- Claude chat ---------- */
+const whoSel=$('who'),logEl=$('log'),msgIn=$('msg'),keyIn=$('key'),modelIn=$('model'),proxyIn=$('proxy');
+const mem={};
+function store(k,v){try{if(v===undefined)return localStorage.getItem('catoffice.'+k)||mem[k]||'';localStorage.setItem('catoffice.'+k,v);}catch(e){if(v===undefined)return mem[k]||'';mem[k]=v;}}
+keyIn.value=store('key');modelIn.value=store('model');proxyIn.value=store('proxy');
+keyIn.addEventListener('change',()=>store('key',keyIn.value.trim()));
+modelIn.addEventListener('change',()=>store('model',modelIn.value.trim()));
+proxyIn.addEventListener('change',()=>store('proxy',proxyIn.value.trim()));
+const OPT=[['office','Whole office']].concat(IDS.map(id=>[id,CD[id].name+', '+CD[id].role.toLowerCase()]));
+OPT.forEach(o=>{const e=document.createElement('option');e.value=o[0];e.textContent=o[1];whoSel.appendChild(e);});
+const LOGS={};
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2200);}
+function statusText(){const L=[];WIDS.forEach(id=>{const c=W[id];L.push(c.name+' ('+c.role+'): '+statusOf(id).label+'; workload '+Math.round(c.load)+' of 100; tasks done '+c.done+'; skills: '+skillStr(c)+'.');});
+['kaito','duke','mittens'].forEach(id=>L.push(CD[id].name+' ('+CD[id].role+'): '+statusOf(id).label+'.'));
+L.push('Recent tasks: '+(hist.length?hist.join(' | '):'none yet')+'.');return L.join('\n');}
+function systemFor(id){
+const rule='Task rule used by Kaito: score = skill × 10 − workload, cats at 70 or more rest, tasks nobody can handle go to Duke.';
+if(id==='office')return 'You are a practical operations advisor for a small cozy cat office. Answer from the live status below in a few concise sentences, and name specific cats.\n'+rule+'\nLive status:\n'+statusText();
+const d=CD[id];return 'You are '+d.name+', the '+d.role.toLowerCase()+' cat in a small cozy cat office. Personality: '+d.quirk+' Stay in character, reply in 2 to 4 short sentences, warm and a little playful, no emoji. Use the live status below when it is relevant.\n'+rule+'\nLive status:\n'+statusText();}
+function defaultText(id){return id==='office'?'Give me a short briefing: who is free, who is overloaded, and who should take the next task?':'Hi! What are you working on right now, and how is the day going?';}
+function renderLog(id){logEl.innerHTML='';const L=LOGS[id]||[];if(!L.length){const e=document.createElement('p');e.className='m note';e.textContent='No messages yet. Send one, or press Office briefing.';logEl.appendChild(e);}
+L.forEach(m=>{const e=document.createElement('p');e.className='m'+(m.role==='note'?' note':'');if(m.role==='note')e.textContent=m.content;else{const b=document.createElement('b');b.textContent=(m.role==='user'?'You':id==='office'?'Advisor':CD[id].name)+': ';e.append(b,document.createTextNode(m.content));}logEl.appendChild(e);});logEl.scrollTop=logEl.scrollHeight;}
+function history(id){const h=(LOGS[id]||[]).filter(m=>m.role==='user'||m.role==='assistant').slice(-10);while(h.length&&h[0].role!=='user')h.shift();return h;}
+async function askClaude(id){
+const key=store('key'),proxy=store('proxy');
+const body={model:store('model')||'claude-sonnet-5-5',max_tokens:400,system:systemFor(id),messages:history(id)};
+const headers={'content-type':'application/json'};let url='https://api.anthropic.com/v1/messages';
+if(proxy)url=proxy;else{headers['anthropic-version']='2023-06-01';headers['anthropic-dangerous-direct-browser-access']='true';if(key)headers['x-api-key']=key;}
+let r,data;
+try{r=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});data=await r.json().catch(()=>({}));}
+catch(e){throw new Error('Could not reach the API. Check your connection, add a proxy URL in Connection settings, or use Copy prompt.');}
+if(!r.ok){const m=(data.error&&data.error.message)||('The request failed with status '+r.status+'.');throw new Error(m+((key||proxy)?'':' Add an API key in Connection settings, or use Copy prompt.'));}
+const t=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');if(!t)throw new Error('Claude returned an empty reply.');return t;}
+async function send(text){const id=whoSel.value;const t=(text||msgIn.value).trim()||defaultText(id);msgIn.value='';
+(LOGS[id]=LOGS[id]||[]).push({role:'user',content:t});renderLog(id);
+const wait=document.createElement('p');wait.className='m note';wait.textContent='Thinking…';logEl.appendChild(wait);logEl.scrollTop=logEl.scrollHeight;
+$('send').disabled=true;
+try{const reply=await askClaude(id);LOGS[id].push({role:'assistant',content:reply});}
+catch(e){LOGS[id].push({role:'note',content:e.message});}
+$('send').disabled=false;if(whoSel.value===id)renderLog(id);}
+async function copyText(t){try{await navigator.clipboard.writeText(t);}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(_){}ta.remove();}toast('Prompt copied. Paste it into Claude.');}
+function promptFor(id,t){return systemFor(id)+'\n\n---\nMy message: '+(t||defaultText(id));}
+function chatWith(id){whoSel.value=id;renderLog(id);$('chat').scrollIntoView({behavior:reduce?'auto':'smooth',block:'nearest'});msgIn.focus({preventScroll:true});}
+whoSel.addEventListener('change',()=>renderLog(whoSel.value));
+$('send').addEventListener('click',()=>send());
+msgIn.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send();}});
+$('copyp').addEventListener('click',()=>copyText(promptFor(whoSel.value,msgIn.value.trim())));
+$('brief').addEventListener('click',()=>{whoSel.value='office';renderLog('office');if(store('key')||store('proxy'))send(defaultText('office'));else{copyText(promptFor('office'));$('settings').open=true;}});
+$('cChat').addEventListener('click',()=>{if(cardId)chatWith(cardId);});
+$('cCopy').addEventListener('click',()=>{if(cardId)copyText(promptFor(cardId));});
+renderLog('office');
+
+/* ---------- input ---------- */
+let drag=null,hover=null;const ray=new THREE.Raycaster(),mv=new THREE.Vector2();
+function pick(e){const b=cv.getBoundingClientRect();mv.set(((e.clientX-b.left)/b.width)*2-1,-((e.clientY-b.top)/b.height)*2+1);ray.setFromCamera(mv,camera);
+const ch=ray.intersectObjects(catGroups,true);if(ch.length){let o=ch[0].object;while(o){if(o.userData&&o.userData.cat)return{cat:o.userData.cat};o=o.parent;}}
+const hits=ray.intersectObjects(groups,true);for(const h of hits){let o=h.object;while(o){if(o.userData&&o.userData.room)return{room:o.userData.room};o=o.parent;}}return null;}
+function setHover(id){if(hover===id)return;if(hover){const g=CG[hover],b=g.userData.bs;g.scale.set(b[0],b[1],b[2]);}hover=id;if(id){const g=CG[id],b=g.userData.bs;g.scale.set(b[0]*1.08,b[1]*1.08,b[2]*1.08);}}
+stage.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,m:0};stage.setPointerCapture(e.pointerId);stage.style.cursor='grabbing';});
+stage.addEventListener('pointermove',e=>{if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.m+=Math.abs(dx)+Math.abs(dy);drag.x=e.clientX;drag.y=e.clientY;
+cg.th=Math.max(-1.3,Math.min(1.3,cg.th-dx*.006));cg.phi=Math.max(.3,Math.min(1.2,cg.phi-dy*.005));}
+else{const h=pick(e);setHover(h&&h.cat?h.cat:null);stage.style.cursor=h?'pointer':'grab';}});
+stage.addEventListener('pointerup',e=>{const m=drag?drag.m:99;drag=null;stage.style.cursor='grab';if(m<6){const h=pick(e);if(h){stopTour();if(h.cat)selectCat(h.cat);else focusRoom(h.room);}}});
+stage.addEventListener('pointerleave',()=>setHover(null));
+stage.addEventListener('dblclick',()=>{stopTour();overview();});
+stage.addEventListener('wheel',e=>{e.preventDefault();cg.r=Math.max(5,Math.min(34,cg.r*(1+e.deltaY*.001)));},{passive:false});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){stopTour();overview();}});
+function resize(){const w=stage.clientWidth||680,h=stage.clientHeight||440;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);resize();Object.assign(cs,cg);
+
+/* ---------- animation ---------- */
+function angleLerp(a,b,k){const d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;return a+d*k;}
+function walk(w,dt){const g=w.g;let moving=false;
+if(w.path.length){const t=w.path[0],dx=t[0]-g.position.x,dz=t[1]-g.position.z,d=Math.hypot(dx,dz);moving=true;
+if(d<.06){g.position.x=t[0];g.position.z=t[1];w.path.shift();if(!w.path.length){moving=false;if(w.done){const f=w.done;w.done=null;f();}}}
+else{const s=Math.min(w.sp*dt,d);g.position.x+=dx/d*s;g.position.z+=dz/d*s;g.rotation.y=angleLerp(g.rotation.y,Math.atan2(dx,dz),.2);}}
+else g.rotation.y=angleLerp(g.rotation.y,0,.12);
+w.t+=dt*(moving?9:0);w.legs[0].rotation.x=Math.sin(w.t)*.6;w.legs[1].rotation.x=-Math.sin(w.t)*.6;
+g.position.y=moving?Math.abs(Math.sin(w.t))*.08:0;return moving;}
+const clock=new THREE.Clock(),tmp=new THREE.Vector3();let ledT=0,barT=0;
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);tick+=dt;
+const k=1-Math.exp(-dt*(reduce?12:4.5));
+if(followId){const o=CG[followId];cg.tx=o.position.x;cg.tz=o.position.z;}
+for(const key in cs)cs[key]+=(cg[key]-cs[key])*k;
+camera.position.set(cs.tx+cs.r*Math.sin(cs.phi)*Math.sin(cs.th),cs.ty+cs.r*Math.cos(cs.phi),cs.tz+cs.r*Math.sin(cs.phi)*Math.cos(cs.th));camera.lookAt(cs.tx,cs.ty,cs.tz);
+const showLabels=cs.r>14;roomLabels.forEach(l=>{l.visible=showLabels;});
+walk(bot,dt);
+WIDS.forEach(id=>{const c=W[id];walk(c.w,dt);
+if(c.phase==='lounge'){if(c.rest){c.load=Math.max(0,c.load-6*dt);if(c.load<=35)c.rest=false;}else{c.load=Math.max(0,c.load-2*dt);if(c.load>=70)c.rest=true;}}
+else if(c.phase==='working'){c.load=Math.max(0,c.load-.6*dt);c.tleft-=dt;if(c.tleft<=0){c.done++;c.phase='toLounge';c.w.path=c.back.slice();c.w.done=()=>{c.phase='lounge';if(c.load>=70)c.rest=true;};}}});
+barT+=dt;if(barT>.3){barT=0;updateBars();updateStatus();}
+for(let i=flights.length-1;i>=0;i--){const f=flights[i];f.t+=dt/1.2;const t=Math.min(f.t,1);f.s.position.lerpVectors(f.from,f.to,t);f.s.position.y+=Math.sin(t*Math.PI)*1.4;
+if(f.t>=1){scene.remove(f.s);flights.splice(i,1);if(f.done)f.done();}}
+anim.steams.forEach(s=>{s.t=(s.t+dt*.45)%1;s.m.position.set(s.x+Math.sin(s.t*7+s.i)*.07,s.y+s.t*1.1,s.z);s.m.material.opacity=.5*(1-s.t);s.m.scale.setScalar(.6+s.t*1.2);});
+ledT+=dt;if(ledT>.25){ledT=0;const cols=['#7FEA9E','#EF9F27','#7FEA9E','#E24B4A','#5DE0FF'];anim.leds.forEach(m=>m.color.set(Math.random()<.3?cols[(Math.random()*cols.length)|0]:'#7FEA9E'));}
+anim.twinkle.forEach(t=>t.m.color.set(Math.sin(tick*2+t.i*1.7)>.6?'#FFF0C8':'#FFC870'));
+anim.zs.forEach(z=>{const t=(tick*.5+z.i*.33)%1;z.s.position.y=z.y+t*.5;z.s.material.opacity=1-t;});
+anim.bob.forEach(g=>{if(hover!=='duke')g.scale.y=g.userData.bs[1]*(1+Math.sin(tick*1.6)*.02);});
+anim.tails.forEach((t,i)=>{t.rotation.y=Math.sin(tick*2+i)*.35;});
+if(cardId){const o=CG[cardId];tmp.set(o.position.x,o.position.y+3.05*o.scale.y,o.position.z).project(camera);const w=stage.clientWidth,h=stage.clientHeight,ch=card.offsetHeight||190;
+card.style.left=Math.max(130,Math.min(w-130,(tmp.x*.5+.5)*w))+'px';card.style.top=Math.max(ch+8,(-tmp.y*.5+.5)*h-6)+'px';}
+renderer.render(scene,camera);}
+chips[0].classList.add('on');updateBars();updateStatus();loop();
+}
+})();
+</script>
+</body>
+</html>
